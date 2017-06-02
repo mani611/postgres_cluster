@@ -1,0 +1,56 @@
+
+
+---
+    - name: create backup directory
+      file: path=/etc/yum.repos.d/repo_bkp state=directory mode=0777
+      sudo: yes
+    - name: check if "/etc/yum.repos.d/repo_bkp" exist
+      register: remote
+      stat: path=/etc/yum.repos.d/repo_bkp
+      sudo: yes
+
+
+    - name: Move all files
+      shell: mv /etc/yum.repos.d/*.repo /etc/yum.repos.d/repo_bkp
+      when: remote.stat.exists == false
+      sudo: true
+
+    - name: create postgres repo
+      shell: rpm -ivh https://download.postgresql.org/pub/repos/yum/9.6/redhat/rhel-7-x86_64/pgdg-centos96-9.6-3.noarch.rpm
+      sudo: yes 
+      ignore_errors: True
+    - copy:
+        src: ../../../../files/pgdg-96-centos.repo
+        dest: /etc/yum.repos.d
+        owner: root
+        group: root
+        mode: 0644
+      sudo: yes
+    - name: create repo file
+      file: path=/etc/yum.repos.d/media.repo state=touch mode=0644
+      sudo: yes
+    - name: insert line in media.repo
+      lineinfile: dest=/etc/yum.repos.d/media.repo
+                  line='{{item}}'
+      with_items:
+        - '[media]'
+        - 'name=Local CD media'
+        - 'baseurl=file:///media'
+        - 'enabled=1'
+        - 'gpgcheck=0'
+    - name: disable selinux
+      lineinfile: dest=/etc/sysconfig/selinux
+                  regexp="{{item.regexp}}"
+                  line="{{item.line}}"
+      with_items:
+        - { regexp: 'SELINUX=+', line: "SELINUX=disabled"}
+
+    - name: commands to shell
+      command: "{{ item }}"
+      with_items:
+        - mount /dev/sr0 /media
+        - yum repolist
+        - systemctl stop firewalld
+        - systemctl disable firewalld
+        - setenforce 0
+      ignore_errors: True

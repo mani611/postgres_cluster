@@ -1,0 +1,8 @@
+---
+    - shell: "{{ item }}"
+      with_items:
+        - echo hacluster | passwd --stdin hacluster
+        - systemctl start pcsd
+        - systemctl enable pcsd
+       
+      sudo: yes

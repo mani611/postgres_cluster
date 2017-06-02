@@ -1,0 +1,12 @@
+---
+    - command: /bin/hostname
+      register: hostname
+
+    - name: insert line in postgresql.conf
+      lineinfile: dest=/var/lib/pgsql/9.6/data/recovery.conf.pcmk
+                  regexp="^primary_conninfo"
+                  line="primary_conninfo = 'host=192.168.122.50 application_name={{ hostname.stdout }}'" state=present
+      become: true
+      become_user: postgres
+
+

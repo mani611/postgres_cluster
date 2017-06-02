@@ -1,0 +1,28 @@
+---
+    - command: /bin/hostname
+      register: hostname
+
+    - command: "{{ item }}"
+      with_items:
+        - "pg_basebackup -h 192.168.122.201 -U postgres -D /var/lib/pgsql/9.6/data -X stream -P"
+      become: true
+      become_user: postgres
+    - name: create recovery.conf
+      file: path=/var/lib/pgsql/9.6/data/recovery.conf state=touch
+      become: true
+      become_user: postgres
+    - name: insert line in postgresql.conf
+      lineinfile: dest=/var/lib/pgsql/9.6/data/recovery.conf
+                  regexp="{{item.regexp}}"
+                  line="{{item.line}}"
+      with_items:
+        - { regexp: 'standby_mode', line: "standby_mode = 'on'"}
+        - { regexp: 'primary_conninfo', line: "primary_conninfo = 'host=192.168.122.100 port=5432 user=postgres application_name={{ hostname.stdout }}'"}
+        - { regexp: 'cp', line: "restore_command = 'cp /var/lib/pgsql/9.6/pg_archive/%f %p'"}
+        - { regexp: 'recovery_target_timeline', line: "recovery_target_timeline = 'latest'"}
+
+    - command: "{{ item }}"
+      with_items:
+        - systemctl start postgresql-9.6
+      sudo: yes
+

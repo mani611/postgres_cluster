@@ -1,0 +1,47 @@
+---
+ - hosts: app
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - yum_repo
+
+
+ - hosts: app
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - postgres_yum
+ - hosts: post1
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - postgres
+
+ - hosts: post2
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - postgres_slave
+ - hosts: post2
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - postgres_service
+
+ - hosts: app
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - hacluster_user
+ - hosts: post1
+   name: this is a play app side
+   user: test
+   sudo: true
+   roles:
+     - pacemaker_create

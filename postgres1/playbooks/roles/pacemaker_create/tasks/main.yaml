@@ -1,0 +1,24 @@
+---
+    - shell: "{{ item }}"
+      with_items:
+        - pcs cluster auth post1 post2 -u hacluster -p hacluster
+        - pcs cluster setup --name pgsql_cfg post1 post2
+        - pcs cluster start --all
+        - pcs property set stonith-enabled=false
+      sudo: yes
+    - name: Transfer the cluster config script
+      copy: src=../../../../files/cluster.sh dest=/home/ mode=0777
+      sudo: yes
+    - name: Transfer the script
+      copy: src=../../../../files/bak.sh dest=/home/ mode=0777
+      sudo: yes
+    - name: Execute the script
+      shell: sh /home/cluster.sh
+      sudo: yes
+    - name: insert line in pg_hba.conf
+      lineinfile: dest=/etc/crontab
+                  line="{{item}}"
+      with_items:
+        - '0 0 * * * root /root/bak.sh'
+      sudo: yes
+

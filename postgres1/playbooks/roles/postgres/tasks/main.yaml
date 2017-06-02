@@ -1,0 +1,50 @@
+
+
+---
+    - command: "{{ item }}"
+      with_items:
+        - "/usr/pgsql-9.6/bin/postgresql96-setup initdb"
+      sudo: true
+    - command: "{{ item }}"
+      with_items:
+        - "mkdir /var/lib/pgsql/9.6/pg_archive"
+        - "mkdir /var/lib/pgsql/9.6/pgbackup"
+      become: true
+      become_user: postgres
+
+
+    - name: insert line in postgresql.con
+      lineinfile: dest=/var/lib/pgsql/9.6/data/postgresql.conf
+                  regexp="{{item.regexp}}"
+                  line="{{item.line}}"
+      with_items:
+        - { regexp: 'listen_addresses.+', line: "listen_addresses = '*'"}
+        - { regexp: 'wal_level', line: "wal_level = hot_standby"}
+        - { regexp: 'synchronous_commit', line: "synchronous_commit = on"}
+        - { regexp: 'archive_mode', line: "archive_mode = on"}
+        - { regexp: 'archive_command', line: "archive_command = 'cp %p /var/lib/pgsql/9.6/pg_archive/%f'"}
+        - { regexp: 'max_wal_senders', line: "max_wal_senders=5"}
+        - { regexp: 'wal_keep_segments', line: "wal_keep_segments = 32"}
+        - { regexp: 'hot_standby', line: "hot_standby = on"}
+        - { regexp: 'restart_after_crash = off', line: "restart_after_crash = off"}
+        - { regexp: 'wal_receiver_status_interval', line: "wal_receiver_status_interval = 2"}
+        - { regexp: 'max_standby_streaming_delay', line: "max_standby_streaming_delay = -1"}
+        - { regexp: 'synchronous_commit', line: "synchronous_commit = on"}
+        - { regexp: 'restart_after_crash', line: "restart_after_crash = off"}
+        - { regexp: 'hot_standby_feedback', line: "hot_standby_feedback = on"}
+      become: true
+      become_user: postgres
+
+    - name: insert line in pg_hba.conf
+      lineinfile: dest=/var/lib/pgsql/9.6/data/pg_hba.conf
+                  line="{{item}}"
+      with_items:
+        - 'host replication postgres 192.168.122.100/32 reject'
+        - 'host replication postgres 0.0.0.0/0 trust'
+      become: true
+      become_user: postgres
+    - command: "{{ item }}"
+      with_items:
+        - systemctl start postgresql-9.6
+      sudo: yes
+

@@ -1,0 +1,18 @@
+---
+    - name: install
+      yum: state=present name={{ item }}
+      with_items:
+        - pacemaker
+        - postgresql96
+        - postgresql96-contrib
+        - postgresql96-server
+        - resource-agents
+        - pcs
+        - fence-agents-all
+      sudo: true
+
+    - name: create
+      shell: yum install -y https://github.com/dalibo/PAF/releases/download/v2.1.0/resource-agents-paf-2.1.0-1.noarch.rpm
+      sudo: true
+      ignore_errors: True
+

@@ -1,0 +1,4 @@
+[app]
+#devops_server ansible_ssh_user=test
+post1	ansible_ssh_user=test
+post2 ansible_ssh_user=test
